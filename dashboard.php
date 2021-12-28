@@ -37,7 +37,7 @@ $totalStudents = $turmaModel->getMyStudentsTotal($current_user['id']);
             <div class="main-content white">
                 <!-- Tema descritivo da Pagina -->
                 <div class="content-description z-depth-1">
-                    <h4>Marcador de Presença</h4>
+                    <h4>Marcador de Presenças</h4>
                 </div>
 
                 <!-- Corpo do conteudo principal -->
