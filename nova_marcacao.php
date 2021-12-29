@@ -158,7 +158,7 @@ if(isset($_POST["buscar"])){
     </div>
 
     <script src="assets/jquery-3.3.1.min.js"></script>
-    <script src="assets/cruds/materialize/js/materialize.js"></script>
+    <script src="assets/materialize/js/materialize.js"></script>
     <script>
         $("select").material_select();
         
