@@ -129,12 +129,10 @@ class Image extends Block
         }
 
         if ($this->_dompdf->getOptions()->getDebugLayout() && $this->_dompdf->getOptions()->getDebugLayoutBlocks()) {
-            $debug_border_box = $frame->get_border_box();
-            $this->_debug_layout([$debug_border_box['x'], $debug_border_box['y'], (float)$debug_border_box['w'], (float)$debug_border_box['h']], "blue");
+            $this->_debug_layout($frame->get_border_box(), "blue");
             if ($this->_dompdf->getOptions()->getDebugLayoutPaddingBox()) {
-                $debug_padding_box = $frame->get_padding_box();
-                $this->_debug_layout([$debug_padding_box['x'], $debug_padding_box['y'], (float)$debug_padding_box['w'], (float)$debug_padding_box['h']], "blue", [0.5, 0.5]);
-        }
+                $this->_debug_layout($frame->get_padding_box(), "blue", [0.5, 0.5]);
+            }
         }
 
         $id = $frame->get_node()->getAttribute("id");

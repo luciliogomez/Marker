@@ -434,21 +434,24 @@ class Cellmap
         $col =& $this->get_column($j);
         $col["used-width"] = $width;
         $next_col =& $this->get_column($j + 1);
-        $next_col["x"] = $col["x"] + $width;
+        $next_col["x"] = $next_col["x"] + $width;
     }
 
     /**
      * @param int $i
-     * @param long $height
+     * @param mixed $height
      */
     public function set_row_height($i, $height)
     {
         $row =& $this->get_row($i);
-        if ($height > $row["height"]) {
-            $row["height"] = $height;
+
+        if ($row["height"] !== null && $height <= $row["height"]) {
+            return;
         }
+
+        $row["height"] = $height;
         $next_row =& $this->get_row($i + 1);
-        $next_row["y"] = $row["y"] + $row["height"];
+        $next_row["y"] = $row["y"] + $height;
     }
 
     /**
@@ -644,12 +647,12 @@ class Cellmap
             $width = $style->width;
 
             $val = null;
-            if (Helpers::is_percent($width) && $colspan === 1) {
+            if (Helpers::is_percent($width)) {
                 $var = "percent";
                 $val = (float)rtrim($width, "% ") / $colspan;
-            } else if ($width !== "auto" && $colspan === 1) {
+            } else if ($width !== "auto") {
                 $var = "absolute";
-                $val = $style->length_in_pt($frame_min);
+                $val = $style->length_in_pt($frame_min) / $colspan;
             }
 
             $min = 0;
@@ -671,10 +674,10 @@ class Cellmap
                 $max += $col["max-width"];
             }
 
-            if ($frame_min > $min && $colspan === 1) {
+            if ($frame_min > $min) {
                 // The frame needs more space.  Expand each sub-column
                 // FIXME try to avoid putting this dummy value when table-layout:fixed
-                $inc = ($this->is_layout_fixed() ? 10e-10 : ($frame_min - $min));
+                $inc = ($this->is_layout_fixed() ? 10e-10 : ($frame_min - $min) / $colspan);
                 for ($c = 0; $c < $colspan; $c++) {
                     $col =& $this->get_column($this->__col + $c);
                     $col["min-width"] += $inc;

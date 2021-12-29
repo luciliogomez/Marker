@@ -1,12 +1,13 @@
 <?php
 
+include_once "source/autoload.php";
+include_once "dompdf/autoload.inc.php";
+
 use Dompdf\Dompdf;
 use Source\Core\LoadPdf;
 use Source\Models\MarcacaoModel;
 use Source\Models\TurmaModel;
 
-include_once "source/autoload.php";
-include_once "dompdf_classes.php";
 
 $turmaModel = new TurmaModel();
 $turmas = $turmaModel->getMyTurmas($current_user['id']); 

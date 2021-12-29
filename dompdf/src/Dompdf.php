@@ -179,18 +179,11 @@ class Dompdf
     private $systemLocale = null;
 
     /**
-     * The system's mbstring internal encoding
+     * Tells if the system's locale is the C standard one
      *
-     * @var string
+     * @var bool
      */
-    private $mbstringEncoding = null;
-
-    /**
-     * The system's PCRE JIT configuration
-     *
-     * @var string
-     */
-    private $pcreJit = null;
+    private $localeStandard = false;
 
     /**
      * The default view of the PDF in the viewer
@@ -279,6 +272,13 @@ class Dompdf
      */
     public function __construct($options = null)
     {
+        mb_internal_encoding('UTF-8');
+
+        if (version_compare(PHP_VERSION, '7.0.0') >= 0)
+        {
+            @ini_set('pcre.jit', 0);
+        }
+
         if (isset($options) && $options instanceof Options) {
             $this->setOptions($options);
         } elseif (is_array($options)) {
@@ -288,12 +288,12 @@ class Dompdf
         }
 
         $versionFile = realpath(__DIR__ . '/../VERSION');
-        if (file_exists($versionFile) && ($version = trim(file_get_contents($versionFile))) !== false && $version !== '$Format:<%h>$') {
+        if (file_exists($versionFile) && ($version = file_get_contents($versionFile)) !== false && $version !== '$Format:<%h>$') {
           $this->version = sprintf('dompdf %s', $version);
         }
 
-        $this->setPhpConfig();
-
+        $this->localeStandard = sprintf('%.1f', 1.0) == '1.0';
+        $this->saveLocale();
         $this->paperSize = $this->options->getDefaultPaperSize();
         $this->paperOrientation = $this->options->getDefaultPaperOrientation();
 
@@ -301,48 +301,33 @@ class Dompdf
         $this->setFontMetrics(new FontMetrics($this->getCanvas(), $this->getOptions()));
         $this->css = new Stylesheet($this);
 
-        $this->restorePhpConfig();
+        $this->restoreLocale();
     }
 
     /**
-     * Save the system's existing locale, PCRE JIT, and MBString encoding
-     * configuration and configure the system for Dompdf processing
+     * Save the system's locale configuration and
+     * set the right value for numeric formatting
      */
-    private function setPhpConfig()
+    private function saveLocale()
     {
-        if (sprintf('%.1f', 1.0) !== '1.0') {
-            $this->systemLocale = setlocale(LC_NUMERIC, "0");
-            setlocale(LC_NUMERIC, "C");
+        if ($this->localeStandard) {
+            return;
         }
 
-        if (version_compare(PHP_VERSION, '7.0.0') >= 0) {
-            $this->pcreJit = @ini_get('pcre.jit');
-            @ini_set('pcre.jit', '0');
-        }
-
-        $this->mbstringEncoding = mb_internal_encoding();
-        mb_internal_encoding('UTF-8');
+        $this->systemLocale = setlocale(LC_NUMERIC, "0");
+        setlocale(LC_NUMERIC, "C");
     }
 
     /**
      * Restore the system's locale configuration
      */
-    private function restorePhpConfig()
+    private function restoreLocale()
     {
-        if (!empty($this->systemLocale)) {
-            setlocale(LC_NUMERIC, $this->systemLocale);
-            $this->systemLocale = null;
+        if ($this->localeStandard) {
+            return;
         }
 
-        if (!empty($this->pcreJit)) {
-            @ini_set('pcre.jit', $this->pcreJit);
-            $this->pcreJit = null;
-        }
-
-        if (!empty($this->mbstringEncoding)) {
-            mb_internal_encoding($this->mbstringEncoding);
-            $this->mbstringEncoding = null;
-        }
+        setlocale(LC_NUMERIC, $this->systemLocale);
     }
 
     /**
@@ -365,7 +350,7 @@ class Dompdf
      */
     public function loadHtmlFile($file, $encoding = null)
     {
-        $this->setPhpConfig();
+        $this->saveLocale();
 
         if (!$this->protocol && !$this->baseHost && !$this->basePath) {
             [$this->protocol, $this->baseHost, $this->basePath] = Helpers::explode_url($file);
@@ -385,17 +370,9 @@ class Dompdf
         if ($protocol == "" || $protocol === "file://") {
             $realfile = realpath($uri);
 
-            $chroot = $this->options->getChroot();
-            $chrootValid = false;
-            foreach($chroot as $chrootPath) {
-                $chrootPath = realpath($chrootPath);
-                if ($chrootPath !== false && strpos($realfile, $chrootPath) === 0) {
-                    $chrootValid = true;
-                    break;
-                }
-            }
-            if ($chrootValid !== true) {
-                throw new Exception("Permission denied on $file. The file could not be found under the paths specified by Options::chroot.");
+            $chroot = realpath($this->options->getChroot());
+            if ($chroot && strpos($realfile, $chroot) !== 0) {
+                throw new Exception("Permission denied on $file. The file could not be found under the directory specified by Options::chroot.");
             }
 
             $ext = strtolower(pathinfo($realfile, PATHINFO_EXTENSION));
@@ -425,7 +402,7 @@ class Dompdf
             }
         }
 
-        $this->restorePhpConfig();
+        $this->restoreLocale();
 
         $this->loadHtml($contents, $encoding);
     }
@@ -465,7 +442,7 @@ class Dompdf
      */
     public function loadHtml($str, $encoding = null)
     {
-        $this->setPhpConfig();
+        $this->saveLocale();
 
         // Determine character encoding when $encoding parameter not used
         if ($encoding === null) {
@@ -557,7 +534,7 @@ class Dompdf
             $this->loadDOM($doc, $quirksmode);
         } finally {
             restore_error_handler();
-            $this->restorePhpConfig();
+            $this->restoreLocale();
         }
     }
 
@@ -743,7 +720,7 @@ class Dompdf
      */
     public function render()
     {
-        $this->setPhpConfig();
+        $this->saveLocale();
         $options = $this->options;
 
         $logOutputFile = $options->getLogOutputFile();
@@ -859,7 +836,7 @@ class Dompdf
             ob_end_clean();
         }
 
-        $this->restorePhpConfig();
+        $this->restoreLocale();
     }
 
     /**
@@ -921,14 +898,14 @@ class Dompdf
      */
     public function stream($filename = "document.pdf", $options = [])
     {
-        $this->setPhpConfig();
+        $this->saveLocale();
 
         $canvas = $this->getCanvas();
         if (!is_null($canvas)) {
             $canvas->stream($filename, $options);
         }
 
-        $this->restorePhpConfig();
+        $this->restoreLocale();
     }
 
     /**
@@ -945,7 +922,7 @@ class Dompdf
      */
     public function output($options = [])
     {
-        $this->setPhpConfig();
+        $this->saveLocale();
 
         $canvas = $this->getCanvas();
         if (is_null($canvas)) {
@@ -954,7 +931,7 @@ class Dompdf
 
         $output = $canvas->output($options);
 
-        $this->restorePhpConfig();
+        $this->restoreLocale();
 
         return $output;
     }

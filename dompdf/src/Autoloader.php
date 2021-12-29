@@ -1,6 +1,6 @@
 <?php
 namespace Dompdf;
-// echo "LOADING";
+
 /**
  * Autoloads Dompdf classes
  *

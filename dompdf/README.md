@@ -53,8 +53,7 @@ Follow us on [![Twitter](http://twitter-badges.s3.amazonaws.com/twitter-a.png)](
  * php-font-lib
  * php-svg-lib
  
-Note that some required dependencies may have further dependencies 
-(notably php-svg-lib requires sabberworm/php-css-parser).
+Note that some required dependencies may have further dependencies (notably php-svg-lib requires sabberworm/php-css-parser).
 
 ### Recommendations
 
@@ -200,18 +199,6 @@ $dompdf->setOptions($options);
 
 See [Dompdf\Options](src/Options.php) for a list of available options.
 
-### Resource Reference Requirements
-
-In order to protect potentially sensitive information Dompdf imposes 
-restrictions on files referenced from the local file system or the web. 
-
-Files accessed through web-based protocols have the following requirements:
- * The Dompdf option "isRemoteEnabled" must be set to "true"
- * PHP must either have the curl extension enabled or the 
-   allow_url_fopen setting set to true
-   
-Files accessed through the local file system have the following requirement:
- * The file must fall within the path(s) specified for the Dompdf "chroot" option
 
 ## Limitations (Known Issues)
 
@@ -234,5 +221,4 @@ Files accessed through the local file system have the following requirement:
 
 [![Donate button](https://www.paypal.com/en_US/i/btn/btn_donate_SM.gif)](http://goo.gl/DSvWf)
 
-*If you find this project useful, please consider making a donation.
-Any funds donated will be used to help further development on this project.)*
+*If you find this project useful, please consider making a donation. Any funds donated will be used to help further development on this project.)*

@@ -47,8 +47,7 @@ class Options
      * dompdf's "chroot"
      *
      * Prevents dompdf from accessing system files or other files on the webserver.
-     * All local files opened by dompdf must be in a subdirectory of this directory
-     * or array of directories.
+     * All local files opened by dompdf must be in a subdirectory of this directory.
      * DO NOT set it to '/' since this could allow an attacker to use dompdf to
      * read any files on the server.  This should be an absolute path.
      *
@@ -58,7 +57,7 @@ class Options
      * documentation is available on the dompdf wiki at:
      * https://github.com/dompdf/dompdf/wiki
      *
-     * @var array
+     * @var string
      */
     private $chroot;
 
@@ -276,15 +275,26 @@ class Options
     private $pdflibLicense = "";
 
     /**
+     * @var string
+     * @deprecated
+     */
+    private $adminUsername = "user";
+
+    /**
+     * @var string
+     * @deprecated
+     */
+    private $adminPassword = "password";
+
+    /**
      * @param array $attributes
      */
     public function __construct(array $attributes = null)
     {
-        $rootDir = realpath(__DIR__ . "/../");
-        $this->setChroot(array($rootDir));
-        $this->setRootDir($rootDir);
+        $this->setChroot(realpath(__DIR__ . "/../"));
+        $this->setRootDir($this->getChroot());
         $this->setTempDir(sys_get_temp_dir());
-        $this->setFontDir($rootDir . "/lib/fonts");
+        $this->setFontDir($this->chroot . "/lib/fonts");
         $this->setFontCache($this->getFontDir());
         $this->setLogOutputFile($this->getTempDir() . "/log.htm");
 
@@ -356,6 +366,10 @@ class Options
                 $this->setPdfBackend($value);
             } elseif ($key === 'pdflibLicense' || $key === 'pdflib_license') {
                 $this->setPdflibLicense($value);
+            } elseif ($key === 'adminUsername' || $key === 'admin_username') {
+                $this->setAdminUsername($value);
+            } elseif ($key === 'adminPassword' || $key === 'admin_password') {
+                $this->setAdminPassword($value);
             }
         }
         return $this;
@@ -419,8 +433,48 @@ class Options
             return $this->getPdfBackend();
         } elseif ($key === 'pdflibLicense' || $key === 'pdflib_license') {
             return $this->getPdflibLicense();
+        } elseif ($key === 'adminUsername' || $key === 'admin_username') {
+            return $this->getAdminUsername();
+        } elseif ($key === 'adminPassword' || $key === 'admin_password') {
+            return $this->getAdminPassword();
         }
         return null;
+    }
+
+    /**
+     * @param string $adminPassword
+     * @return $this
+     */
+    public function setAdminPassword($adminPassword)
+    {
+        $this->adminPassword = $adminPassword;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAdminPassword()
+    {
+        return $this->adminPassword;
+    }
+
+    /**
+     * @param string $adminUsername
+     * @return $this
+     */
+    public function setAdminUsername($adminUsername)
+    {
+        $this->adminUsername = $adminUsername;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAdminUsername()
+    {
+        return $this->adminUsername;
     }
 
     /**
@@ -460,29 +514,21 @@ class Options
     }
 
     /**
-     * @param array|string $chroot
+     * @param string $chroot
      * @return $this
      */
-    public function setChroot($chroot, $delimiter = ',')
+    public function setChroot($chroot)
     {
-        if (is_string($chroot)) {
-            $this->chroot = explode($delimiter, $chroot);
-        } elseif (is_array($chroot)) {
-            $this->chroot = $chroot;
-        }
+        $this->chroot = $chroot;
         return $this;
     }
 
     /**
-     * @return array
+     * @return string
      */
     public function getChroot()
     {
-        $chroot = [];
-        if (is_array($this->chroot)) {
-            $chroot = $this->chroot;
-        }
-        return $chroot;
+        return $this->chroot;
     }
 
     /**
